@@ -1,0 +1,7 @@
+django
+djangorestframework
+pymilvus
+requests
+environ
+psycopg2-binary
+django-cors-headers

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Interaction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-top: 20px;
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Interaction</h1>
+
+    <div class="form-container">
+        <h2>Upload JSON File</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="jsonFile" name="file" accept=".json" required>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="uploadMessage" class="message"></div>
+    </div>
+
+    <div class="form-container">
+        <h2>Search</h2>
+        <form id="searchForm">
+            <input type="text" id="searchQuery" name="query" placeholder="Enter search query" required>
+            <button type="submit">Search</button>
+        </form>
+        <div id="searchMessage" class="message"></div>
+        <div id="imageResult"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var formData = new FormData();
+            var fileInput = document.getElementById('jsonFile');
+            formData.append('file', fileInput.files[0]);
+
+            fetch('http://127.0.0.1:8000/mori/upload-json-file/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.status === 201) {
+                    document.getElementById('uploadMessage').textContent = 'File uploaded successfully!';
+                    document.getElementById('uploadMessage').classList.remove('error');
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'File upload failed');
+                    });
+                }
+            })
+            .catch(error => {
+                document.getElementById('uploadMessage').textContent = error.message;
+                document.getElementById('uploadMessage').classList.add('error');
+            });
+        });
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var query = document.getElementById('searchQuery').value;
+
+            fetch('http://127.0.0.1:8000/mori/search/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Search failed');
+                    });
+                }
+            })
+            .then(blob => {
+                var url = URL.createObjectURL(blob);
+                var img = document.createElement('img');
+                img.src = url;
+                document.getElementById('imageResult').innerHTML = '';
+                document.getElementById('imageResult').appendChild(img);
+                document.getElementById('searchMessage').textContent = 'Image retrieved successfully!';
+                document.getElementById('searchMessage').classList.remove('error');
+            })
+            .catch(error => {
+                document.getElementById('searchMessage').textContent = error.message;
+                document.getElementById('searchMessage').classList.add('error');
+            });
+        });
+    </script>
+</body>
+</html>
